@@ -1,0 +1,178 @@
+/* 文件路径: src/app/globals.css */
+/* 全局样式 - 智能体奥德赛项目 */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#root,
+#__next {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f5f5;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* 深色模式滚动条 */
+.ant-layout-sider ::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+}
+
+.ant-layout-sider ::-webkit-scrollbar-thumb:hover {
+  background: #525252;
+}
+
+/* 页面容器 */
+.page-container {
+  padding: 16px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+
+/* 卡片间距 */
+.card-spacing {
+  margin-bottom: 16px;
+}
+
+/* 响应式适配 - 移动端 */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 12px;
+    height: calc(100vh - 56px);
+  }
+
+  .desktop-nav-tabs {
+    display: none !important;
+  }
+
+  .mobile-nav-btn {
+    display: inline-flex !important;
+  }
+}
+
+/* 桌面端首页导航标签垂直对齐修正 */
+.desktop-nav-tabs .ant-tabs-nav {
+  margin-bottom: 0 !important;
+}
+
+.desktop-nav-tabs .ant-tabs {
+  margin-bottom: 0 !important;
+}
+
+/* 桌面端隐藏手机导航按钮 */
+@media (min-width: 769px) {
+  .mobile-nav-btn {
+    display: none !important;
+  }
+}
+
+/* 工具类 */
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.full-height {
+  height: 100%;
+}
+
+.full-width {
+  width: 100%;
+}
+
+/* 状态标签颜色 */
+.status-success {
+  color: #52c41a;
+}
+
+.status-warning {
+  color: #faad14;
+}
+
+.status-error {
+  color: #ff4d4f;
+}
+
+.status-info {
+  color: #1677ff;
+}
+
+/* 离线状态指示 */
+.offline-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.offline-indicator.online {
+  background: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+.offline-indicator.offline {
+  background: #fff2f0;
+  color: #ff4d4f;
+  border: 1px solid #ffccc7;
+}
+
+.offline-indicator.syncing {
+  background: #e6f4ff;
+  color: #1677ff;
+  border: 1px solid #91caff;
+}

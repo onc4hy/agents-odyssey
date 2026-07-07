@@ -1,0 +1,965 @@
+# 文件路径: openapi.yaml
+# OpenAPI 3.0 接口规范 - 智能体奥德赛项目
+# 所有后端 HTTP 接口标准化定义，100% 全覆盖
+
+openapi: "3.0.3"
+info:
+  title: 智能体奥德赛 API
+  description: |
+    Agents-Odyssey 智能体进化平台 API 接口规范。
+    接口分为两大分组：
+    - 离线本地接口：纯前端 IndexedDB 操作，无需鉴权
+    - 云端服务接口：需要用户登录鉴权，基于 SQLite 数据库
+  version: "0.1.0"
+  contact:
+    name: 智能体奥德赛团队
+  license:
+    name: MIT
+
+servers:
+  - url: /api
+    description: 本地开发环境
+
+tags:
+  - name: 智能体管理
+    description: 智能体 CRUD、版本管理、迭代记录
+  - name: 平台管理
+    description: 第三方平台管理、差异台账、适配规则
+  - name: 分身部署
+    description: 多平台分身部署、状态管理
+  - name: 数据回收
+    description: 全域数据回收、内容聚合
+  - name: 归一化迭代
+    description: 数据归一化、量化择优、迭代优化
+  - name: 同步服务
+    description: 离线在线数据双向同步
+  - name: 用户认证
+    description: 用户登录注册、游客模式
+
+paths:
+  # ==================== 智能体管理 ====================
+  /agents:
+    get:
+      tags: [智能体管理]
+      summary: 获取智能体列表
+      description: 分页查询智能体列表，支持按类型、关键词筛选
+      parameters:
+        - name: page
+          in: query
+          description: 页码，从1开始
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          description: 每页条数
+          schema:
+            type: integer
+            default: 10
+        - name: type
+          in: query
+          description: 智能体类型
+          schema:
+            type: string
+            enum: [prompt, workflow]
+        - name: keyword
+          in: query
+          description: 搜索关键词
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentListResponse"
+        "500":
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [智能体管理]
+      summary: 创建智能体
+      description: 创建新的智能体（提示词型或工作流型）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentCreateRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+        "400":
+          description: 参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /agents/{id}:
+    get:
+      tags: [智能体管理]
+      summary: 获取智能体详情
+      description: 根据 ID 获取单个智能体的详细信息
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 智能体 ID
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+        "404":
+          description: 智能体不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags: [智能体管理]
+      summary: 更新智能体
+      description: 更新智能体配置信息
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 智能体 ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentUpdateRequest"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+        "400":
+          description: 参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: 智能体不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [智能体管理]
+      summary: 删除智能体
+      description: 删除指定智能体
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 智能体 ID
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: 智能体不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==================== 平台管理 ====================
+  /platforms:
+    get:
+      tags: [平台管理]
+      summary: 获取平台列表
+      description: 获取所有第三方智能体平台列表
+      parameters:
+        - name: page
+          in: query
+          description: 页码
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          description: 每页条数
+          schema:
+            type: integer
+            default: 10
+        - name: region
+          in: query
+          description: 区域
+          schema:
+            type: string
+            enum: [domestic, overseas]
+        - name: isBound
+          in: query
+          description: 是否已绑定
+          schema:
+            type: boolean
+        - name: keyword
+          in: query
+          description: 搜索关键词
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformListResponse"
+        "500":
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [平台管理]
+      summary: 新增平台
+      description: 管理员新增第三方平台配置
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlatformCreateRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformResponse"
+        "400":
+          description: 参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /platforms/{key}/diff-ledger:
+    get:
+      tags: [平台管理]
+      summary: 获取平台差异台账
+      description: 获取指定平台的组件支持差异台账
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: 平台标识
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiffLedgerResponse"
+        "404":
+          description: 平台不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /adaptation-rules:
+    get:
+      tags: [平台管理]
+      summary: 获取适配规则列表
+      description: 获取工作流适配规则列表
+      parameters:
+        - name: targetPlatform
+          in: query
+          description: 目标平台标识
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdaptationRuleListResponse"
+
+  # ==================== 归一化迭代 ====================
+  /iteration/normalize:
+    post:
+      tags: [归一化迭代]
+      summary: 数据归一化处理
+      description: 对全域回收数据进行归一化抹平处理
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                agentId:
+                  type: string
+                  description: 智能体 ID
+                samples:
+                  type: array
+                  description: 待归一化的样本数据
+                  items:
+                    $ref: "#/components/schemas/QualityContentSample"
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizationResultResponse"
+
+  /iteration/optimize:
+    post:
+      tags: [归一化迭代]
+      summary: 生成迭代优化方案
+      description: 基于优质样本生成智能体迭代优化建议
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                agentId:
+                  type: string
+                  description: 智能体 ID
+                topN:
+                  type: integer
+                  description: 取前 N 个优质样本
+                  default: 20
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IterationOptimizationResponse"
+
+components:
+  schemas:
+    # ==================== 通用响应 ====================
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码，0 表示成功
+        message:
+          type: string
+          description: 响应消息
+      required:
+        - code
+        - message
+
+    SuccessResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              description: 成功数据
+
+    ErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              nullable: true
+
+    PaginatedResponse:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            type: object
+        total:
+          type: integer
+          description: 总条数
+        page:
+          type: integer
+          description: 当前页码
+        pageSize:
+          type: integer
+          description: 每页条数
+
+    # ==================== 智能体相关 ====================
+    AgentType:
+      type: string
+      enum: [prompt, workflow]
+      description: 智能体类型
+
+    PromptConfig:
+      type: object
+      properties:
+        systemPrompt:
+          type: string
+          description: 系统提示词
+        userPromptTemplate:
+          type: string
+          description: 用户提示词模板
+        persona:
+          type: string
+          description: 人设描述
+        outputRules:
+          type: array
+          items:
+            type: string
+          description: 输出规则
+        temperature:
+          type: number
+          description: 温度参数
+        maxTokens:
+          type: integer
+          description: 最大 token 数
+        model:
+          type: string
+          description: 模型名称
+
+    WorkflowConfig:
+      type: object
+      properties:
+        nodes:
+          type: array
+          description: 节点列表
+          items:
+            type: object
+        edges:
+          type: array
+          description: 边列表
+          items:
+            type: object
+        variables:
+          type: object
+          description: 变量定义
+        trigger:
+          type: object
+          description: 触发器配置
+
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 智能体 ID
+        name:
+          type: string
+          description: 智能体名称
+        description:
+          type: string
+          description: 智能体描述
+        type:
+          $ref: "#/components/schemas/AgentType"
+        promptConfig:
+          $ref: "#/components/schemas/PromptConfig"
+        workflowConfig:
+          $ref: "#/components/schemas/WorkflowConfig"
+        version:
+          type: string
+          description: 当前版本号
+        iterationCount:
+          type: integer
+          description: 迭代次数
+        overallScore:
+          type: number
+          description: 综合量化得分
+        tags:
+          type: array
+          items:
+            type: string
+          description: 标签列表
+        author:
+          type: string
+          description: 作者
+        enabled:
+          type: boolean
+          description: 是否启用
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新时间
+        ext:
+          type: object
+          description: 扩展字段
+      required:
+        - id
+        - name
+        - type
+        - version
+        - iterationCount
+        - enabled
+        - createdAt
+        - updatedAt
+
+    AgentCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 智能体名称
+        description:
+          type: string
+          description: 智能体描述
+        type:
+          $ref: "#/components/schemas/AgentType"
+        promptConfig:
+          $ref: "#/components/schemas/PromptConfig"
+        workflowConfig:
+          $ref: "#/components/schemas/WorkflowConfig"
+        tags:
+          type: array
+          items:
+            type: string
+      required:
+        - name
+        - type
+
+    AgentUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        promptConfig:
+          $ref: "#/components/schemas/PromptConfig"
+        workflowConfig:
+          $ref: "#/components/schemas/WorkflowConfig"
+        tags:
+          type: array
+          items:
+            type: string
+        enabled:
+          type: boolean
+
+    AgentResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/Agent"
+
+    AgentListResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
+          properties:
+            data:
+              allOf:
+                - $ref: "#/components/schemas/PaginatedResponse"
+                - type: object
+                  properties:
+                    list:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/Agent"
+
+    # ==================== 平台相关 ====================
+    PlatformRegion:
+      type: string
+      enum: [domestic, overseas]
+      description: 平台区域
+
+    PlatformComponentSupport:
+      type: object
+      properties:
+        componentType:
+          type: string
+          description: 组件类型
+        supported:
+          type: boolean
+          description: 是否支持
+        supportLevel:
+          type: integer
+          description: 支持程度 0-100
+        nativeComponentName:
+          type: string
+          description: 平台原生组件名称
+        paramMapping:
+          type: object
+          description: 参数映射关系
+        limitations:
+          type: string
+          description: 限制说明
+
+    PlatformCapabilityMatrix:
+      type: object
+      properties:
+        componentGranularity:
+          type: integer
+          description: 可视化组件颗粒度评分 0-100
+        loopSupport:
+          type: boolean
+          description: 循环节点支持
+        branchSupport:
+          type: boolean
+          description: 分支节点支持
+        batchSupport:
+          type: boolean
+          description: 批量节点支持
+        ragNative:
+          type: boolean
+          description: RAG 原生能力
+        pluginOpenness:
+          type: integer
+          description: 插件开放度 0-100
+        authComplexity:
+          type: integer
+          description: API 鉴权复杂度 0-100
+        computeLimit:
+          type: string
+          description: 算力上限描述
+        logGranularity:
+          type: integer
+          description: 日志粒度评分 0-100
+        autoExecution:
+          type: boolean
+          description: 自动化执行能力
+        privateDeployment:
+          type: boolean
+          description: 私有化部署支持
+        components:
+          type: array
+          description: 组件支持清单
+          items:
+            $ref: "#/components/schemas/PlatformComponentSupport"
+
+    ThirdPartyPlatform:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 平台 ID
+        platformKey:
+          type: string
+          description: 平台标识
+        name:
+          type: string
+          description: 平台名称
+        region:
+          $ref: "#/components/schemas/PlatformRegion"
+        description:
+          type: string
+          description: 平台描述
+        logo:
+          type: string
+          description: 平台 logo
+        website:
+          type: string
+          description: 官网地址
+        apiDocsUrl:
+          type: string
+          description: API 文档地址
+        capabilityMatrix:
+          $ref: "#/components/schemas/PlatformCapabilityMatrix"
+        isBound:
+          type: boolean
+          description: 是否已绑定
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - platformKey
+        - name
+        - region
+        - capabilityMatrix
+        - isBound
+        - createdAt
+        - updatedAt
+
+    PlatformCreateRequest:
+      type: object
+      properties:
+        platformKey:
+          type: string
+        name:
+          type: string
+        region:
+          $ref: "#/components/schemas/PlatformRegion"
+        description:
+          type: string
+        website:
+          type: string
+        capabilityMatrix:
+          $ref: "#/components/schemas/PlatformCapabilityMatrix"
+      required:
+        - platformKey
+        - name
+        - region
+
+    PlatformResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/ThirdPartyPlatform"
+
+    PlatformListResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
+          properties:
+            data:
+              allOf:
+                - $ref: "#/components/schemas/PaginatedResponse"
+                - type: object
+                  properties:
+                    list:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/ThirdPartyPlatform"
+
+    DiffLedgerResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                platformKey:
+                  type: string
+                components:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/PlatformComponentSupport"
+
+    # ==================== 适配规则 ====================
+    ComponentMappingRule:
+      type: object
+      properties:
+        sourceComponentType:
+          type: string
+          description: 源组件类型
+        targetComponentType:
+          type: string
+          description: 目标组件类型
+        paramMapping:
+          type: object
+          description: 参数映射
+        needsDegradation:
+          type: boolean
+          description: 是否需要降级
+        degradationStrategy:
+          type: string
+          description: 降级策略
+        successRate:
+          type: number
+          description: 成功率
+
+    WorkflowAdaptationRule:
+      type: object
+      properties:
+        id:
+          type: string
+        sourcePlatform:
+          type: string
+        targetPlatform:
+          type: string
+        ruleName:
+          type: string
+        componentMappings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComponentMappingRule"
+        version:
+          type: string
+        enabled:
+          type: boolean
+        successRate:
+          type: number
+        usageCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AdaptationRuleListResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/WorkflowAdaptationRule"
+
+    # ==================== 量化迭代 ====================
+    QuantificationScores:
+      type: object
+      properties:
+        contentQuality:
+          type: number
+          description: 内容产出质量 0-100
+        taskSuccessRate:
+          type: number
+          description: 任务完成成功率 0-100
+        executionSpeed:
+          type: number
+          description: 执行耗时得分 0-100
+        resourceEfficiency:
+          type: number
+          description: 资源消耗得分 0-100
+        promptAccuracy:
+          type: number
+          description: prompt 准确率 0-100
+        workflowStability:
+          type: number
+          description: 工作流稳定性 0-100
+
+    QualityContentSample:
+      type: object
+      properties:
+        id:
+          type: string
+        platformKey:
+          type: string
+        agentId:
+          type: string
+        content:
+          type: object
+        scores:
+          $ref: "#/components/schemas/QuantificationScores"
+        overallScore:
+          type: number
+        isPlatformBias:
+          type: boolean
+        collectedAt:
+          type: string
+          format: date-time
+
+    NormalizationResult:
+      type: object
+      properties:
+        validSampleCount:
+          type: integer
+        prunedSampleCount:
+          type: integer
+        pruneReasons:
+          type: object
+        normalizedData:
+          type: array
+          items:
+            type: object
+
+    NormalizationResultResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/NormalizationResult"
+
+    IterationOptimizationResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        fromVersion:
+          type: string
+        toVersion:
+          type: string
+        scoreComparison:
+          type: object
+          properties:
+            before:
+              $ref: "#/components/schemas/QuantificationScores"
+            after:
+              $ref: "#/components/schemas/QuantificationScores"
+            improvement:
+              type: number
+        changes:
+          type: array
+          items:
+            type: string
+        usedSampleCount:
+          type: integer
+
+    IterationOptimizationResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/IterationOptimizationResult"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT 鉴权，登录后获取 token
